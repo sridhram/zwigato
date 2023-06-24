@@ -6,7 +6,7 @@ router.get("/", (req, res) => {
   res.send("inside user route");
 });
 
-router.get("/auth/apicallback", async (req, res) => {
+router.get("/auth", async (req, res) => {
   if (!req.headers.authorization) {
     return res.status(500).send({msg: "Token not found"});
   }

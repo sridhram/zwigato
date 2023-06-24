@@ -5,18 +5,19 @@ import {motion} from 'framer-motion'
 import {animateClick, fadeInOut} from '../animations'
 import {signInWithPopup, getAuth, GoogleAuthProvider} from "firebase/auth"
 import {app} from '../config/firebase.config'
+import { authenticateUser } from '../api'
 
 const InputCont = ({children, inputType, baseText, addAnimation=false}) => {
     return(
         addAnimation ?
             <motion.label {...fadeInOut} className='flex relative'>
-                <input type={inputType} className='peer grow outline-[#ff6c6c] outline-none rounded-lg shadow-sm login-container px-4 py-2' />
+                <input type={inputType} name={baseText.toLowerCase()} className='peer grow outline-[#ff6c6c] outline-none rounded-lg shadow-sm login-container px-4 py-2' />
                 <span className='text-base login-container transition-all duration-300 absolute top-[8px] left-[30px] z-10 peer-focus:text-sm peer-focus:top-[-13px] peer-focus:left-[10px]'>{baseText}</span>
                 {children}
             </motion.label>
         :
             <label className='flex relative'>
-                <input type={inputType} className='peer grow outline-[#ff6c6c] outline-none rounded-lg shadow-sm login-container px-4 py-2' />
+                <input type={inputType} name={baseText.toLowerCase()} className='peer grow outline-[#ff6c6c] outline-none rounded-lg shadow-sm login-container px-4 py-2' />
                 <span className='text-base login-container transition-all duration-300 absolute top-[8px] left-[30px] z-10 peer-focus:text-sm peer-focus:top-[-13px] peer-focus:left-[10px]'>{baseText}</span>
                 {children}
             </label>
@@ -46,7 +47,8 @@ const Login = () => {
         firebaseAuth.onAuthStateChanged(async (credentials) => {
             if(credentials){
                 const token = await credentials.getIdToken();
-                console.log(token);
+                const userCredentials = await authenticateUser(token);
+                console.log(userCredentials);
             }
         })
     }
