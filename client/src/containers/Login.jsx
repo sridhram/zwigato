@@ -1,4 +1,4 @@
-import React, {useState, useRef} from 'react'
+import React, {useState, useRef, useEffect} from 'react'
 import Logo from '../assets/logo.png'
 import {EnvelopeIcon, LockClosedIcon} from '@heroicons/react/24/solid'
 import {ExclamationTriangleIcon} from '@heroicons/react/24/outline'
@@ -8,6 +8,7 @@ import {signInWithPopup, getAuth, GoogleAuthProvider, createUserWithEmailAndPass
 import {app} from '../config/firebase.config'
 import { authenticateUser } from '../api'
 import { useNavigate } from 'react-router-dom'
+import { useDispatch, useSelector } from 'react-redux'
 
 const InputCont = ({ children, inputType, baseText, addAnimation = false, elemRefs }) => {
     
@@ -60,6 +61,14 @@ const Login = () => {
     const firebaseAuth = getAuth(app);
     const googleProvider = new GoogleAuthProvider();
     const navigate = useNavigate();
+    const dispatch = useDispatch();
+    const user = useSelector(state => state.user);
+
+    useEffect(() => {
+        if(user){
+            navigate('/',{replace: true});
+        }
+    },[navigate, user]);
 
     const googleLogin = async () => {
         await signInWithPopup(firebaseAuth, googleProvider);
@@ -67,7 +76,7 @@ const Login = () => {
             if(credentials){
                 const token = await credentials.getIdToken();
                 try{
-                    await authenticateUser(token);
+                    const userDetails = await authenticateUser(token);
                 } catch(err){
                     showGeneralErr(err.code);
                     return;
@@ -117,7 +126,7 @@ const Login = () => {
 
     const createAccount = async (email, password) => {
         try{
-            await createUserWithEmailAndPassword(firebaseAuth, email, password);
+            const userDetails = await createUserWithEmailAndPassword(firebaseAuth, email, password);
         }catch(err){
             showGeneralErr(err.code);
             return;
@@ -128,7 +137,7 @@ const Login = () => {
 
     const loginWithEmail = async (email, password) => {
         try{
-            await signInWithEmailAndPassword(firebaseAuth, email, password);
+            const userDetails = await signInWithEmailAndPassword(firebaseAuth, email, password);
         }catch(err){
             showGeneralErr(err.code);
             return;

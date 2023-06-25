@@ -7,7 +7,9 @@ export const authenticateUser = async (token) => {
                 'Authorization' : `Bearer ${token}`
             }
         });
-        return await response.json().data;
+        const userData = await response.json();
+        
+        return userData.data;
     } catch(err){
         return null;
     }
