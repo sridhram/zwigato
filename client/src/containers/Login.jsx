@@ -1,25 +1,40 @@
-import React, {useState} from 'react'
+import React, {useState, useRef} from 'react'
 import Logo from '../assets/logo.png'
 import {EnvelopeIcon, LockClosedIcon} from '@heroicons/react/24/solid'
+import {ExclamationTriangleIcon} from '@heroicons/react/24/outline'
 import {motion} from 'framer-motion'
 import {animateClick, fadeInOut} from '../animations'
-import {signInWithPopup, getAuth, GoogleAuthProvider} from "firebase/auth"
+import {signInWithPopup, getAuth, GoogleAuthProvider, createUserWithEmailAndPassword, signInWithEmailAndPassword} from "firebase/auth"
 import {app} from '../config/firebase.config'
 import { authenticateUser } from '../api'
+import { useNavigate } from 'react-router-dom'
 
-const InputCont = ({children, inputType, baseText, addAnimation=false}) => {
+const InputCont = ({ children, inputType, baseText, addAnimation = false, elemRefs }) => {
+    
     return(
         addAnimation ?
-            <motion.label {...fadeInOut} className='flex relative'>
-                <input type={inputType} name={baseText.toLowerCase()} className='peer grow outline-[#ff6c6c] outline-none rounded-lg shadow-sm login-container px-4 py-2' />
-                <span className='text-base login-container transition-all duration-300 absolute top-[8px] left-[30px] z-10 peer-focus:text-sm peer-focus:top-[-13px] peer-focus:left-[10px]'>{baseText}</span>
+            <motion.label {...fadeInOut} className='flex flex-col relative'>
+                <input type={inputType} required placeholder=' ' name={baseText.toLowerCase()} className='peer grow outline-[#ff6c6c] outline-none rounded-lg shadow-sm login-container px-4 py-2 invalid:border-red-500 autofill:bg-transparent' />
+                <span className='absolute text-sm login-container transition-all duration-300 z-10 top-[-13px] left-[10px] peer-focus:text-sm peer-focus:top-[-13px] peer-focus:left-[10px] peer-placeholder-shown:text-sm peer-placeholder-shown:top-[8px] peer-placeholder-shown:left-[30px]'>{baseText}</span>
                 {children}
+                <div ref={elemRefs} className="hidden flex text-red-500 pt-2 items-center">
+                    <ExclamationTriangleIcon className='w-7 h-7 pr-2' />
+                    <span className='text-sm'>Password doesnt match</span>
+                </div>
             </motion.label>
         :
-            <label className='flex relative'>
-                <input type={inputType} name={baseText.toLowerCase()} className='peer grow outline-[#ff6c6c] outline-none rounded-lg shadow-sm login-container px-4 py-2' />
-                <span className='text-base login-container transition-all duration-300 absolute top-[8px] left-[30px] z-10 peer-focus:text-sm peer-focus:top-[-13px] peer-focus:left-[10px]'>{baseText}</span>
+            <label className='flex flex-col relative'>
+                <input type={inputType} placeholder=' ' required name={baseText.toLowerCase()} className='peer grow outline-[#ff6c6c] outline-none rounded-lg shadow-sm login-container px-4 py-2 invalid:border-red-500 autofill:bg-transparent' />
+                <span className='absolute text-sm login-container transition-all duration-300 z-10 top-[-13px] left-[10px] peer-focus:text-sm peer-focus:top-[-13px] peer-focus:left-[10px] peer-placeholder-shown:text-sm peer-placeholder-shown:top-[8px] peer-placeholder-shown:left-[30px]'>{baseText}</span>
                 {children}
+                <div ref={elemRefs} className="hidden flex text-red-500 pt-2 items-center">
+                    <ExclamationTriangleIcon className='w-7 h-7 pr-2' />
+                    {inputType === 'email' ? 
+                        <span className='text-sm'>Invalid Email Address</span>
+                    :
+                        <span className='text-sm'>Password needs to: <br /> Include atleast 8 characters<br /> Include both lower and upper cases <br /> Include atlease one number and a special character</span>
+                    }
+                </div>
             </label>
     )
 };
@@ -38,17 +53,28 @@ const ButtonContainer = ({ signUpBoolean, isSignupHandler }) => {
 
 const Login = () => {
     const [isSignup, setIsSignup] = useState(false);
-
+    const genErr = useRef();
+    const ConfPwdErrDivRef = useRef();
+    const emailRef = useRef();
+    const pwdRef = useRef();
     const firebaseAuth = getAuth(app);
     const googleProvider = new GoogleAuthProvider();
+    const navigate = useNavigate();
 
     const googleLogin = async () => {
         await signInWithPopup(firebaseAuth, googleProvider);
         firebaseAuth.onAuthStateChanged(async (credentials) => {
             if(credentials){
                 const token = await credentials.getIdToken();
-                const userCredentials = await authenticateUser(token);
-                console.log(userCredentials);
+                try{
+                    await authenticateUser(token);
+                } catch(err){
+                    showGeneralErr(err.code);
+                    return;
+                }
+                genErr.current.classList.add('hidden');
+                navigate('/', {replace : true});
+                
             }
         })
     }
@@ -57,28 +83,99 @@ const Login = () => {
         event.preventDefault();
         setIsSignup(!isSignup);
     }
+
     const handleForm = () => {
         event.preventDefault();
+        genErr.current.classList.add('hidden');
+        emailRef.current && emailRef.current.classList.add('hidden');
+        pwdRef.current && pwdRef.current.classList.add('hidden');
+        ConfPwdErrDivRef.current && ConfPwdErrDivRef.current.classList.add('hidden');
+
         if (event.submitter.classList.contains("google-auth")){
             googleLogin();
         }else{
-            //normal auth
+            const email = event.target.elements.email;
+            const password = event.target.elements.password;
+            const confirmPassword = isSignup && event.target.elements["confirm password"];
+            if(!checkAndThrowErr(email, true, emailRef) || (isSignup && !checkAndThrowErr(password, false, pwdRef))){
+                return;
+            }
+
+            if(isSignup && (password.value !== confirmPassword.value)){
+                ConfPwdErrDivRef.current.classList.add('flex');
+                ConfPwdErrDivRef.current.classList.remove('hidden');
+                return;
+            } else if(isSignup) {
+                ConfPwdErrDivRef.current.classList.remove('flex');
+                ConfPwdErrDivRef.current.classList.add('hidden');
+            }
+
+            genErr.current.classList.add('hidden');
+            isSignup ? createAccount(email.value, password.value) : loginWithEmail(email.value, password.value);
         }
     }
+
+    const createAccount = async (email, password) => {
+        try{
+            await createUserWithEmailAndPassword(firebaseAuth, email, password);
+        }catch(err){
+            showGeneralErr(err.code);
+            return;
+        }
+        genErr.current.classList.add('hidden');
+        navigate('/',{replace:true});
+    }
+
+    const loginWithEmail = async (email, password) => {
+        try{
+            await signInWithEmailAndPassword(firebaseAuth, email, password);
+        }catch(err){
+            showGeneralErr(err.code);
+            return;
+        }
+        navigate('/', { replace: true });
+    }
+
+    const showGeneralErr = (errMsg) => {
+        if (errMsg.includes('auth/wrong-password')){
+            errMsg = 'Wrong Password. Try again';
+        } else if (errMsg.includes('auth/user-not-found')){
+            errMsg = 'User not Registered. Try Signing up';
+        }
+        if(genErr.current){
+            genErr.current.innerText = errMsg;
+            genErr.current.classList.remove('hidden');
+        }
+    }
+
+    const checkAndThrowErr = (inputEl, isEmail, elemRef) => {
+        const validRegex = isEmail ? /^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9-]+(?:\.[a-zA-Z0-9-]+)*$/ : /^(?=.*?[A-Z])(?=.*?[a-z])(?=.*?[0-9])(?=.*?[#?!@$%^&*-_]).{8,}$/;
+        if (!inputEl.value.match(validRegex)) {
+            elemRef.current.classList.remove('hidden');
+            return false;
+        } else {
+            elemRef.current.classList.add('hidden');
+        }
+        return true;
+    }
+
   return (
       <aside className='bg-login w-full h-full grid place-items-center'>
-        <form onSubmit={handleForm} className='rounded-lg shadow-md login-container flex flex-col gap-8 py-8 px-10 min-w-[400px]'>
+        <form noValidate onSubmit={handleForm} className='rounded-lg shadow-md login-container flex flex-col gap-8 py-8 px-10 min-w-[400px]'>
             <img src={Logo} className='w-24 h-24 self-center' alt="product logo" />
               <h3 className='font-semibold self-center text-4xl'>{isSignup ? 'Signup' : 'Login' }</h3>
-              <InputCont inputType="text" baseText="Email">
-                  <EnvelopeIcon className='w-5 h-5 absolute top-[10px] left-[5px] z-10 peer-focus:hidden' />
+              <p ref={genErr} className='hidden text-sm text-red-500 flex items-center'>
+                  <ExclamationTriangleIcon className='w-7 h-7 pr-2' />
+              </p>
+              <InputCont inputType="email" baseText="Email" elemRefs={emailRef}>
+                  <EnvelopeIcon className='w-5 h-5 absolute top-[10px] hidden left-[5px] z-10 peer-focus:hidden peer-placeholder-shown:block' />
             </InputCont>
-            <InputCont inputType="password" baseText="Password" >
-                  <LockClosedIcon className='w-5 h-5 absolute top-[8px] left-[5px] z-10 peer-focus:hidden' />
+              <InputCont inputType="password" baseText="Password" elemRefs={pwdRef}>
+                  <LockClosedIcon className='hidden absolute w-5 h-5 top-[8px] left-[5px] z-10 peer-focus:hidden peer-placeholder-shown:block' />
             </InputCont>
             {isSignup && 
-                <InputCont inputType="password" baseText="Confirm Password" addAnimation={true} >
-                    <LockClosedIcon className='w-5 h-5 absolute top-[8px] left-[5px] z-10 peer-focus:hidden' />
+                <InputCont inputType="password" baseText="Confirm Password" addAnimation={true} elemRefs={ConfPwdErrDivRef} >
+                      <LockClosedIcon className='w-5 h-5 hidden absolute top-[8px] left-[5px] z-10 peer-focus:hidden peer-placeholder-shown:block' />
                 </InputCont>
             }
             <ButtonContainer isSignupHandler={toggleSignup}  signUpBoolean={isSignup} />
