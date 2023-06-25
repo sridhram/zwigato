@@ -169,7 +169,7 @@ const Login = () => {
     }
 
   return (
-      <aside className='bg-login w-full h-full grid place-items-center'>
+      <aside className='w-full h-full grid place-items-center grow'>
         <form noValidate onSubmit={handleForm} className='rounded-lg shadow-md login-container flex flex-col gap-8 py-8 px-10 min-w-[400px]'>
             <img src={Logo} className='w-24 h-24 self-center' alt="product logo" />
               <h3 className='font-semibold self-center text-4xl'>{isSignup ? 'Signup' : 'Login' }</h3>
