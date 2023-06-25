@@ -3,21 +3,23 @@ import {NavLink, Link, useNavigate} from 'react-router-dom';
 import Logo from '../assets/logo.png'
 import { ShoppingCartIcon } from '@heroicons/react/24/outline'
 import { UserCircleIcon } from '@heroicons/react/24/solid'
-import { useSelector } from 'react-redux';
+import { useDispatch, useSelector } from 'react-redux';
 import { motion } from 'framer-motion';
 import { getAuth, signOut } from 'firebase/auth';
 import { menuAnimation } from '../animations';
+import { resetUserDetails } from '../context/actions/userActions';
 
 const Header = () => {
     const user = useSelector(state => state.user);
     const [isImagePresent, setIsImagePresent] = useState(true);
     const navigate = useNavigate();
     const firebaseAuth = getAuth();
+    const dispatch = useDispatch();
 
     const logout = async () => {
         try{
-            
             await signOut(firebaseAuth);
+            dispatch(resetUserDetails());
             navigate('/login', { replace: true });
         }catch(err){
             console.log(err);

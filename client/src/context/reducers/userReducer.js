@@ -5,6 +5,9 @@ const userReducer = (state = null, action) => {
 
         case "SET_USER" :
             return action.user;
+            
+        case "RESET_USER" :
+            return action.user;
 
         default :
             return state;
