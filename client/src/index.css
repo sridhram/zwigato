@@ -43,3 +43,14 @@ select:-webkit-autofill:focus {
   box-shadow: 0 0 0px 1000px #ffd7d7 inset;
   color: currentColor;
 }
+
+.active-link::before{
+  content: '';
+  display: block;
+  width: 5px;
+  height: 28px;
+  position: absolute;
+  top: 0px;
+  background: #ff6c6c;
+  left: -16px;
+}
