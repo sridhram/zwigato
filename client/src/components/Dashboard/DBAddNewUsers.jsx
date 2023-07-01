@@ -1,7 +1,9 @@
 import React, { useRef, useState } from 'react'
 import { ArrowUpTrayIcon, XCircleIcon } from '@heroicons/react/24/outline';
-import { ref, uploadBytesResumable, getDownloadURL, getStorage } from "firebase/storage";
+import { ref, uploadBytesResumable, getDownloadURL, getStorage, deleteObject } from "firebase/storage";
 import progressSvg from '../../assets/oval.svg';
+
+const imgRef = {};
 
 const InputBox = ({type, placeholder, isRequired=false, minVal}) =>{
   if(minVal){
@@ -25,7 +27,7 @@ const CategorySection = ({ list, selectedCategories }) => {
     }
   }
   return(
-    <section className='grid grid-cols-[repeat(auto-fill,_25%)] gap-4 justify-evenly'>
+    <section className='grid grid-cols-[repeat(auto-fill,_25%)] gap-4 justify-evenly p-4 rounder-lg border'>
       {list.map((category) => {
         return <div onClick={selectCategory} id={category.id} className='p-2 text-center border rounded-sm text-gray-500 cursor-pointer hover:border-[#ff6c6c]' key={category.id}>{category.category}</div>
       })}
@@ -33,12 +35,23 @@ const CategorySection = ({ list, selectedCategories }) => {
   )
 }
 
-const ImgDiv = ({imgSrc, alt="uploaded image"}) => {
+const ImgDiv = ({ imgSrc, alt = "uploaded image", imgState, setImgState}) => {
+  const deletePic = () => {
+    const imgStorageRef = imgRef[imgSrc];
+    deleteObject(imgStorageRef).then(() => {
+      setImgState(imgState.filter((imgURL) => {
+        return(imgURL !== imgSrc);
+      }));
+    }).catch((error) => {
+      console.log(error);
+    });
+
+  }
   return(
       <div className='flex relative group'>
         <img className='w-[150px] h-[150px] border rounded-md' src={imgSrc} alt={alt} />
-      <div className='w-[150px] h-[150px] z-10 hover:bg-[rgba(0,0,0,0.2)] absolute'></div>
-      <XCircleIcon className='w-8 h-8 cursor-pointer hidden absolute top-[50%] left-[50%] z-20 translate-x-[-50%] translate-y-[-50%] group-hover:block' />
+      <div className='w-[150px] h-[150px] z-10 group-hover:bg-[rgba(0,0,0,0.5)] absolute'></div>
+      <XCircleIcon onClick={deletePic} className='w-8 h-8 cursor-pointer text-white hidden absolute top-[50%] left-[50%] z-20 translate-x-[-50%] translate-y-[-50%] group-hover:block' />
       </div>
   )
 }
@@ -60,7 +73,6 @@ const DBAddNewUsers = () => {
   const selectedCategories = [];
 
   const showImgProgress = (val) =>{
-    console.log(val);
     if(val > 0){
       uploadProgressRef.current.classList.remove('hidden');
     }else if(val >= 100){
@@ -89,6 +101,7 @@ const DBAddNewUsers = () => {
         },
         () => {
           getDownloadURL(uploadTask.snapshot.ref).then((imgURL) => {
+            imgRef[imgURL] = storageRef;
             setImgURLArr([...imgURLArr, imgURL]);
           })
         }
@@ -102,8 +115,8 @@ const DBAddNewUsers = () => {
       <InputBox type="text" placeholder="Item name" isRequired={true} />
       <CategorySection list={categories} selectedCategories={selectedCategories} />
       <InputBox type="number" placeholder="Item price" isRequired={true} minVal={1} />
-      <section className='border rounded-sm flex items-center justify-center gap-4 p-4 flex-wrap' ref={imgDivRef}>
-        <label className="w-[150px] h-[150px] flex gap-1 items-center justify-center rounded-lg bg-sec-text-light/20 cursor-pointer border">
+      <section className='border rounded-lg flex items-center justify-center gap-4 p-4 flex-wrap' ref={imgDivRef}>
+        <label className="w-[150px] h-[150px] flex gap-1 items-center justify-center rounded-lg cursor-pointer border">
           <input type="file" className='hidden' onChange={uploadImage} accept=".jpg, .png, .jpeg, .gif, .bmp, .tif, .tiff|image/*" />
           <ArrowUpTrayIcon className='w-5 h-5' />
           Upload
@@ -111,12 +124,13 @@ const DBAddNewUsers = () => {
         {
           imgURLArr && imgURLArr.map((imgURL, index) => {
             return(
-              <ImgDiv key={index} imgSrc={imgURL} />
+              <ImgDiv key={index} imgSrc={imgURL} imgState={imgURLArr} setImgState={setImgURLArr} />
             )
           })
         }
         <ProgressDiv elemRef={uploadProgressRef}/>
       </section>
+      <button className='bg-[#ff6c6c] text-white p-2 rounded-lg w-[70%] self-center'>Save</button>
     </article>
   )
 }
