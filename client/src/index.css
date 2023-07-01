@@ -54,3 +54,16 @@ select:-webkit-autofill:focus {
   background: #ff6c6c;
   left: -16px;
 }
+
+.selected-category{
+  @apply text-white bg-[#ff6c6c] transition-colors
+}
+
+@layer base {
+
+  input[type="number"]::-webkit-inner-spin-button,
+  input[type="number"]::-webkit-outer-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+  }
+}
