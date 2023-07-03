@@ -14,3 +14,18 @@ export const authenticateUser = async (token) => {
         return null;
     }
 }
+
+export const addNewItem = async (data) => {
+    try{
+        const response = await fetch(`${baseURL}/api/products/create`,{
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(data)
+        });
+        return response;
+    } catch(err){
+        return null;
+    }
+}

@@ -2,28 +2,29 @@ import React, { useRef, useState } from 'react'
 import { ArrowUpTrayIcon, XCircleIcon } from '@heroicons/react/24/outline';
 import { ref, uploadBytesResumable, getDownloadURL, getStorage, deleteObject } from "firebase/storage";
 import progressSvg from '../../assets/oval.svg';
+import { addNewItem } from '../../api';
 
 const imgRef = {};
 
-const InputBox = ({type, placeholder, isRequired=false, minVal}) =>{
+const InputBox = ({type, placeholder, isRequired=false, minVal, name}) =>{
   if(minVal){
     return(
-      <input className='p-2 rounded-md border shadow-md outline-[#ff6c6c]' type={type} placeholder={placeholder} required={isRequired} min={minVal} />
+      <input name={name} className='p-2 rounded-md border shadow-md outline-[#ff6c6c]' type={type} placeholder={placeholder} required={isRequired} min={minVal} />
     )
   }
   return(
-    <input className='p-2 rounded-md border shadow-md outline-[#ff6c6c]' type={type} placeholder={placeholder} required={isRequired} />
+    <input name={name} className='p-2 rounded-md border shadow-md outline-[#ff6c6c]' type={type} placeholder={placeholder} required={isRequired} />
   )
 }
 
-const CategorySection = ({ list, selectedCategories }) => {
+const CategorySection = ({ list, selectedCategories, setSelectedCategories }) => {
   const selectCategory = () => {
     if(event.target.classList.contains('selected-category')){
       event.target.classList.remove('selected-category');
-      selectedCategories.splice(selectedCategories.indexOf(event.target.id),1);
+      setSelectedCategories(selectedCategories.splice(selectedCategories.indexOf(event.target.id),1));
     }else{
       event.target.classList.add('selected-category');
-      selectedCategories.push(event.target.id);
+      setSelectedCategories([...selectedCategories, event.target.id]);
     }
   }
   return(
@@ -70,7 +71,7 @@ const DBAddNewUsers = () => {
     { id: 7, category: 'Meats, Fish & Eggs' },
   ]
 
-  const selectedCategories = [];
+  const [selectedCategories, setSelectedCategories] = useState([]);
 
   const showImgProgress = (val) =>{
     if(val > 0){
@@ -110,11 +111,27 @@ const DBAddNewUsers = () => {
     
   }
 
+  const saveNewItem = async () => {
+    event.preventDefault();
+    const selectedCategoriesArr = [];
+    selectedCategories.forEach((category) => {
+      selectedCategoriesArr.push(categories[category-1].category);
+    });
+    const data = {
+      name: event.target.elements.name.value,
+      categories: selectedCategoriesArr,
+      price: event.target.elements.price.value,
+      imgURLs: imgURLArr,
+    }
+    const resp = await addNewItem(data);
+    console.log(resp);
+  }
+
   return (
-    <article className='m-8 p-8 flex flex-col gap-4 rounded-md border'>
-      <InputBox type="text" placeholder="Item name" isRequired={true} />
-      <CategorySection list={categories} selectedCategories={selectedCategories} />
-      <InputBox type="number" placeholder="Item price" isRequired={true} minVal={1} />
+    <form onSubmit={saveNewItem} className='m-8 p-8 flex flex-col gap-4 rounded-md border'>
+      <InputBox type="text" placeholder="Item name" name="name" isRequired={true} />
+      <CategorySection list={categories} selectedCategories={selectedCategories} setSelectedCategories={setSelectedCategories} />
+      <InputBox type="number" placeholder="Item price" name="price" isRequired={true} minVal={1} />
       <section className='border rounded-lg flex items-center justify-center gap-4 p-4 flex-wrap' ref={imgDivRef}>
         <label className="w-[150px] h-[150px] flex gap-1 items-center justify-center rounded-lg cursor-pointer border">
           <input type="file" className='hidden' onChange={uploadImage} accept=".jpg, .png, .jpeg, .gif, .bmp, .tif, .tiff|image/*" />
@@ -131,7 +148,7 @@ const DBAddNewUsers = () => {
         <ProgressDiv elemRef={uploadProgressRef}/>
       </section>
       <button className='bg-[#ff6c6c] text-white p-2 rounded-lg w-[70%] self-center'>Save</button>
-    </article>
+    </form>
   )
 }
 
