@@ -4,6 +4,7 @@ const db = admin.firestore();
 
 router.post("/create", async (req, res) => {
   try {
+    console.log("Inside products/create");
     const id = Date.now();
     const data = {
       productId: id,
@@ -19,3 +20,5 @@ router.post("/create", async (req, res) => {
     return res.send({success: false, msg: err});
   }
 });
+
+module.exports = router;
