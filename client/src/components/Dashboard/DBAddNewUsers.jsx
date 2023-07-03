@@ -2,8 +2,12 @@ import React, { useRef, useState } from 'react'
 import { ArrowUpTrayIcon, XCircleIcon } from '@heroicons/react/24/outline';
 import { ref, uploadBytesResumable, getDownloadURL, getStorage, deleteObject } from "firebase/storage";
 import progressSvg from '../../assets/oval.svg';
-import { addNewItem } from '../../api';
-
+import { addNewItem, getAllProducts } from '../../api';
+import { useDispatch, useSelector } from 'react-redux';
+import { setAllProducts } from '../../context/actions/productActions';
+import { alertNull, alertSuccess } from '../../context/actions/alertActions';
+import {motion} from 'framer-motion';
+import { animateClick } from '../../animations';
 const imgRef = {};
 
 const InputBox = ({type, placeholder, isRequired=false, minVal, name}) =>{
@@ -63,6 +67,10 @@ const DBAddNewUsers = () => {
   const imgDivRef = useRef();
   const uploadProgressRef = useRef();
   const [imgURLArr, setImgURLArr] = useState([]);
+
+  const dispatch = useDispatch();
+
+
   const categories = [
     { id: 1, category: 'Drinks' },
     { id: 2, category: 'Desserts' },
@@ -127,7 +135,14 @@ const DBAddNewUsers = () => {
     }
     const resp = await addNewItem(data);
     if(resp.status === 200){
-      console.log('success');
+      const productsList = await getAllProducts();
+      productsList.json().then((products) => {
+        dispatch(alertSuccess("product added successfully"));
+        dispatch(setAllProducts(products.data));
+        setTimeout(() => {
+          dispatch(alertNull());
+        }, 3000)
+      });
     }
   }
 
@@ -151,7 +166,7 @@ const DBAddNewUsers = () => {
         }
         <ProgressDiv elemRef={uploadProgressRef}/>
       </section>
-      <button className='bg-[#ff6c6c] text-white p-2 rounded-lg w-[70%] self-center'>Save</button>
+      <motion.button {...animateClick} className='bg-[#ff6c6c] text-white p-2 rounded-lg w-[70%] self-center'>Save</motion.button>
     </form>
   )
 }

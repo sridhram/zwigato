@@ -8,6 +8,8 @@ const alertReducer = (state = null, action) => {
             return action.alert;
         case "SET_INFO":
             return action.alert;
+        case "SET_ALERT_NULL":
+            return null;
         default:
             return state;
     }
