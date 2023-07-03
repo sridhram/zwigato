@@ -21,15 +21,15 @@ router.post("/create", async (req, res) => {
   }
 });
 
-app.get("/all", async (req, res) => {
+router.get("/all", async (req, res) => {
   try {
     const query = db.collection("products");
     const resp = [];
     const queryResp = await query.get();
-    queryResp.docs.map((value) => {
-      resp.push({...value.data()});
+    queryResp.forEach((value) => {
+      resp.push(value.data());
     });
-    return res.status(200).send({success: true, data: response});
+    return res.status(200).send({success: true, data: resp});
   } catch (err) {
     return res.send({error: err, success: false});
   }

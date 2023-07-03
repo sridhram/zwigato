@@ -29,3 +29,12 @@ export const addNewItem = async (data) => {
         return null;
     }
 }
+
+export const getAllProducts = async () => {
+    try{
+        const response = await fetch(`${baseURL}/api/products/all`);
+        return response;
+    } catch(err){
+        return null;
+    }
+}
