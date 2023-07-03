@@ -3,6 +3,8 @@ import {useDispatch, useSelector } from 'react-redux'
 import { getAllProducts } from '../../api';
 import { setAllProducts } from '../../context/actions/productActions';
 import { PencilIcon, TrashIcon } from '@heroicons/react/24/outline'
+import { animateHover } from '../../animations';
+import { motion } from 'framer-motion';
 
 const DBItems = () => {
   const products = useSelector(state => state.products);
@@ -28,14 +30,18 @@ const DBItems = () => {
       </section>
       {products.map((products, index) => {
           return(
-            <section className='grid grid-flow-col gap-4 items-center grid-cols-productsListing' key={index}>
+            <section className='grid group grid-flow-col gap-4 p-2 rounded-md items-center grid-cols-productsListing hover:bg-gray-200' key={index}>
               <img className='w-[100px] h-[100px] rounded-md' src={products.productImgs[0]} alt="product image" />
               <span>{products.productName}</span>
               <span>{products.productPrice}</span>
               <span>{products.productCategory.toString()}</span>
-              <div className='flex gap-2'>
-                <PencilIcon className='w-5 h-5' />
-                <TrashIcon className='w-5 h-5' />
+              <div className='gap-2 hidden group-hover:flex'>
+                <motion.span {...animateHover}>
+                  <PencilIcon title='Edit' className='w-5 h-5 cursor-pointer' />
+                </motion.span>
+                <motion.span {...animateHover}>
+                  <TrashIcon title='Delete' className='w-5 h-5 cursor-pointer' />
+                </motion.span>
               </div>
               
             </section>

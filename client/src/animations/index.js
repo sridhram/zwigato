@@ -4,6 +4,12 @@ export const animateClick = {
     }
 }
 
+export const animateHover = {
+    whileHover : {
+        scale: 1.1
+    }
+}
+
 export const fadeInOut={
     initial:{opacity:0},
     animate:{opacity:1},
