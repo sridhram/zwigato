@@ -21,7 +21,9 @@ const CategorySection = ({ list, selectedCategories, setSelectedCategories }) =>
   const selectCategory = () => {
     if(event.target.classList.contains('selected-category')){
       event.target.classList.remove('selected-category');
-      setSelectedCategories(selectedCategories.splice(selectedCategories.indexOf(event.target.id),1));
+      setSelectedCategories(selectedCategories.filter((arrElem) => {
+        return arrElem != event.target.id;
+      }));
     }else{
       event.target.classList.add('selected-category');
       setSelectedCategories([...selectedCategories, event.target.id]);
@@ -124,7 +126,9 @@ const DBAddNewUsers = () => {
       imgURLs: imgURLArr,
     }
     const resp = await addNewItem(data);
-    console.log(resp);
+    if(resp.status === 200){
+      console.log('success');
+    }
   }
 
   return (
