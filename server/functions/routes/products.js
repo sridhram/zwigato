@@ -1,10 +1,10 @@
 const router = require("express").Router();
+const {response} = require("express");
 const admin = require("firebase-admin");
 const db = admin.firestore();
 
 router.post("/create", async (req, res) => {
   try {
-    console.log("Inside products/create");
     const id = Date.now();
     const data = {
       productId: id,
@@ -18,6 +18,20 @@ router.post("/create", async (req, res) => {
     return res.status(200).send({success: true, data: response});
   } catch (err) {
     return res.send({success: false, msg: err});
+  }
+});
+
+app.get("/all", async (req, res) => {
+  try {
+    const query = db.collection("products");
+    const resp = [];
+    const queryResp = await query.get();
+    queryResp.docs.map((value) => {
+      resp.push({...value.data()});
+    });
+    return res.status(200).send({success: true, data: response});
+  } catch (err) {
+    return res.send({error: err, success: false});
   }
 });
 
