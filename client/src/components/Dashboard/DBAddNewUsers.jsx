@@ -69,7 +69,7 @@ const DBAddNewUsers = () => {
   const [imgURLArr, setImgURLArr] = useState([]);
 
   const dispatch = useDispatch();
-
+  const productsList = useSelector(state => state.products);
 
   const categories = [
     { id: 1, category: 'Drinks' },
@@ -135,14 +135,20 @@ const DBAddNewUsers = () => {
     }
     const resp = await addNewItem(data);
     if(resp.status === 200){
-      const productsList = await getAllProducts();
-      productsList.json().then((products) => {
-        dispatch(alertSuccess("product added successfully"));
-        dispatch(setAllProducts(products.data));
-        setTimeout(() => {
-          dispatch(alertNull());
-        }, 3000)
-      });
+      if(!productsList){
+        const productsList = await getAllProducts();
+        productsList.json().then((products) => {
+          dispatch(setAllProducts(products.data));
+        });
+      }else{
+        resp.json().then((newProdData) => {
+          dispatch(setAllProducts([...productsList, newProdData.data]));
+        });
+      }
+      dispatch(alertSuccess("product added successfully"));
+      setTimeout(() => {
+        dispatch(alertNull());
+      }, 2000);
     }
   }
 

@@ -38,3 +38,14 @@ export const getAllProducts = async () => {
         return null;
     }
 }
+
+export const deleteProduct = async (productId) => {
+    try{
+        const response = await fetch(`${baseURL}/api/products/${productId}`,{
+            method: 'DELETE'
+        });
+        return response;
+    } catch(err){
+        return err;
+    }
+}
