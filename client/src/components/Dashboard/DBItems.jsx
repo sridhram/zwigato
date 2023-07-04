@@ -6,12 +6,20 @@ import { PencilIcon, TrashIcon } from '@heroicons/react/24/outline'
 import { animateClick, animateHover } from '../../animations';
 import { motion } from 'framer-motion';
 import { alertNull, alertSuccess } from '../../context/actions/alertActions';
+import { deleteObject, getStorage, ref } from 'firebase/storage';
 
 const ConfirmDialog = ({ dialogRef, currentProduct, productsList, resetCurrProd }) => {
   const dispatch = useDispatch();
   const deleteProductOnConfirm = async () => {
     dialogRef.current.close();
     const response = await deleteProduct(currentProduct.productId);
+    const storage = getStorage();
+    currentProduct.productImgs.forEach((imgURL) => {
+      const imgRef = ref(storage, imgURL);
+      deleteObject(imgRef).then(() => {
+        console.log('image deleted successfully');
+      })
+    })
     response.json().then(() => {
       dispatch(setAllProducts(
         productsList.filter((product) => {
