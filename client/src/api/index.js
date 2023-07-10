@@ -15,6 +15,17 @@ export const authenticateUser = async (token) => {
     }
 }
 
+export const getAllUsers = async() => {
+    try{
+        const response = await fetch(`${baseURL}/api/users/all`);
+        const userList = await response.json();
+
+        return userList.data;
+    }catch(err){
+        return null;
+    }
+}
+
 export const addNewItem = async (data) => {
     try{
         const response = await fetch(`${baseURL}/api/products/create`,{

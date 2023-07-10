@@ -23,4 +23,33 @@ router.get("/auth", async (req, res) => {
   }
 });
 
+const usersList = [];
+const getAllUsers = async (nextPageToken) => {
+  admin.auth()
+      .listUsers(1000, nextPageToken)
+      .then((listUsersResult) => {
+        listUsersResult.users.forEach((userRecord) => {
+          usersList.push(userRecord.toJSON());
+        });
+        if (listUsersResult.pageToken) {
+        // List next batch of users.
+          getAllUsers(listUsersResult.pageToken);
+        }
+      })
+      .catch((error) => {
+        console.log("Error listing users:", error);
+      });
+};
+
+getAllUsers();
+
+router.get("/all", async (req, res) => {
+  try {
+    await getAllUsers();
+    return res.status(200).json({data: usersList, count: usersList.length});
+  } catch (err) {
+    return res.status(404).send({msg: err});
+  }
+});
+
 module.exports = router;
