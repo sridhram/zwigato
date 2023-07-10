@@ -14,7 +14,7 @@ router.post("/create", async (req, res) => {
       productImgs: req.body.imgURLs,
     };
 
-    const response = await db.collection("products").doc(`/${id}/`).set(data);
+    await db.collection("products").doc(`/${id}/`).set(data);
     return res.status(200).send({success: true, data: data});
   } catch (err) {
     return res.send({success: false, msg: err});
@@ -44,6 +44,24 @@ router.delete("/:productId", async (req, res) => {
     return res.status(200).send({success: true, msg: result});
   } catch (err) {
     return res.send({success: false, error: err});
+  }
+});
+
+router.put("/:productId", async (req, res) => {
+  try {
+    const id = req.params.productId;
+    const data = {
+      productId: id,
+      productName: req.body.name,
+      productCategory: req.body.categories,
+      productPrice: req.body.price,
+      productImgs: req.body.imgURLs,
+    };
+
+    await db.collection("products").doc(`/${id}/`).update(data);
+    return res.status(200).send({success: true, data: data});
+  } catch (err) {
+    return res.send({success: false, msg: err});
   }
 });
 

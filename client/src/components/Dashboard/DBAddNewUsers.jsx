@@ -1,8 +1,8 @@
-import React, { useRef, useState } from 'react'
+import React, { useEffect, useRef, useState } from 'react'
 import { ArrowUpTrayIcon, XCircleIcon } from '@heroicons/react/24/outline';
 import { ref, uploadBytesResumable, getDownloadURL, getStorage, deleteObject } from "firebase/storage";
 import progressSvg from '../../assets/oval.svg';
-import { addNewItem, getAllProducts } from '../../api';
+import { addNewItem, editItem, getAllProducts } from '../../api';
 import { useDispatch, useSelector } from 'react-redux';
 import { setAllProducts } from '../../context/actions/productActions';
 import { alertNull, alertSuccess } from '../../context/actions/alertActions';
@@ -10,18 +10,44 @@ import {motion} from 'framer-motion';
 import { animateClick } from '../../animations';
 const imgRef = {};
 
-const InputBox = ({type, placeholder, isRequired=false, minVal, name}) =>{
+const InputBox = ({ type, placeholder, isRequired = false, minVal, name, userInputValue=''}) =>{
+  const [userInput, setUserInput] = useState(userInputValue);
+  
+  const setInputVal = () => {
+    setUserInput(event.target.value);
+  }
+
   if(minVal){
     return(
-      <input name={name} className='p-2 rounded-md border shadow-md outline-[#ff6c6c]' type={type} placeholder={placeholder} required={isRequired} min={minVal} />
+      <input name={name} value={userInput} onChange={setInputVal} className='p-2 rounded-md border shadow-md outline-[#ff6c6c]' type={type} placeholder={placeholder} required={isRequired} min={minVal} />
     )
   }
   return(
-    <input name={name} className='p-2 rounded-md border shadow-md outline-[#ff6c6c]' type={type} placeholder={placeholder} required={isRequired} />
+    <input name={name} value={userInput} onChange={setInputVal} className='p-2 rounded-md border shadow-md outline-[#ff6c6c]' type={type} placeholder={placeholder} required={isRequired} />
   )
 }
 
 const CategorySection = ({ list, selectedCategories, setSelectedCategories }) => {
+  
+  const isCategorySelected = (categoryName, index) => {
+    const categoryIndexMap = {
+      'Drinks': 1,
+      'Desserts': 2,
+      'Vegetables and Fruits': 3,
+      'Snacks': 4,
+      'Dairy': 5,
+      'Masala & Dry Fruits': 6,
+      'Meats, Fish & Eggs': 7
+    };
+
+    for(categoryName of selectedCategories){
+      if (categoryIndexMap[categoryName] === index){
+        return true;
+      }
+    }
+    return false;
+  }
+  
   const selectCategory = () => {
     if(event.target.classList.contains('selected-category')){
       event.target.classList.remove('selected-category');
@@ -33,10 +59,11 @@ const CategorySection = ({ list, selectedCategories, setSelectedCategories }) =>
       setSelectedCategories([...selectedCategories, event.target.id]);
     }
   }
+
   return(
     <section className='grid grid-cols-[repeat(auto-fill,_25%)] gap-4 justify-evenly p-4 rounder-lg border'>
       {list.map((category) => {
-        return <div onClick={selectCategory} id={category.id} className='p-2 text-center border rounded-sm text-gray-500 cursor-pointer hover:border-[#ff6c6c]' key={category.id}>{category.category}</div>
+        return <div onClick={selectCategory} id={category.id} className={`p-2 text-center border rounded-sm text-gray-500 cursor-pointer hover:border-[#ff6c6c] ${isCategorySelected(category.category, category.id) && 'selected-category'}`} key={category.id}>{category.category}</div>
       })}
     </section>
   )
@@ -63,13 +90,19 @@ const ImgDiv = ({ imgSrc, alt = "uploaded image", imgState, setImgState}) => {
   )
 }
 
-const DBAddNewUsers = () => {
+const DBAddNewUsers = ({productInfo = null, editState}) => {
   const imgDivRef = useRef();
   const uploadProgressRef = useRef();
   const [imgURLArr, setImgURLArr] = useState([]);
 
   const dispatch = useDispatch();
   const productsList = useSelector(state => state.products);
+  useEffect(() => {
+    if(productInfo){
+      setImgURLArr(productInfo.productImgs);
+      setSelectedCategories(productInfo.productCategory);
+    }
+  }, [productInfo]);
 
   const categories = [
     { id: 1, category: 'Drinks' },
@@ -123,19 +156,28 @@ const DBAddNewUsers = () => {
 
   const saveNewItem = async () => {
     event.preventDefault();
-    const selectedCategoriesArr = [];
-    selectedCategories.forEach((category) => {
-      selectedCategoriesArr.push(categories[category-1].category);
-    });
+    let selectedCategoriesArr = [];
+    if (!isNaN(selectedCategories[0])){
+      selectedCategories.forEach((category) => {
+        selectedCategoriesArr.push(categories[category - 1].category);
+      });
+    }else{
+      selectedCategoriesArr = selectedCategories;
+    }
     const data = {
       name: event.target.elements.name.value,
       categories: selectedCategoriesArr,
       price: event.target.elements.price.value,
       imgURLs: imgURLArr,
     }
-    const resp = await addNewItem(data);
+    let resp = null;
+    if(editState){
+      resp = await editItem(data, productInfo.productId);
+    }else{
+      resp = await addNewItem(data);
+    }
     if(resp.status === 200){
-      if(!productsList){
+      if (!productsList || editState){
         const productsList = await getAllProducts();
         productsList.json().then((products) => {
           dispatch(setAllProducts(products.data));
@@ -145,18 +187,22 @@ const DBAddNewUsers = () => {
           dispatch(setAllProducts([...productsList, newProdData.data]));
         });
       }
-      dispatch(alertSuccess("product added successfully"));
+      const dispatchMsg = editState ? 'product updated successfully' : 'product added successfully';
+      dispatch(alertSuccess(dispatchMsg));
       setTimeout(() => {
         dispatch(alertNull());
       }, 2000);
+      if(editState){
+        editState(false);
+      }
     }
   }
 
   return (
     <form onSubmit={saveNewItem} className='m-8 p-8 flex flex-col gap-4 rounded-md border'>
-      <InputBox type="text" placeholder="Item name" name="name" isRequired={true} />
+      <InputBox type="text" placeholder="Item name" name="name" userInputValue={!productInfo ? '' : productInfo.productName} isRequired={true} />
       <CategorySection list={categories} selectedCategories={selectedCategories} setSelectedCategories={setSelectedCategories} />
-      <InputBox type="number" placeholder="Item price" name="price" isRequired={true} minVal={1} />
+      <InputBox userInputValue={!productInfo ? '' : productInfo.productPrice} type="number" placeholder="Item price" name="price" isRequired={true} minVal={1} />
       <section className='border rounded-lg flex items-center justify-center gap-4 p-4 flex-wrap' ref={imgDivRef}>
         <label className="w-[150px] h-[150px] flex gap-1 items-center justify-center rounded-lg cursor-pointer border">
           <input type="file" className='hidden' onChange={uploadImage} accept=".jpg, .png, .jpeg, .gif, .bmp, .tif, .tiff|image/*" />

@@ -49,3 +49,18 @@ export const deleteProduct = async (productId) => {
         return err;
     }
 }
+
+export const editItem = async (data, productId) => {
+    try {
+        const response = await fetch(`${baseURL}/api/products/${productId}`, {
+            method: 'PUT',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(data)
+        });
+        return response;
+    } catch (err) {
+        return null;
+    }
+}

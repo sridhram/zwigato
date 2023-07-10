@@ -7,6 +7,7 @@ import { animateClick, animateHover } from '../../animations';
 import { motion } from 'framer-motion';
 import { alertNull, alertSuccess } from '../../context/actions/alertActions';
 import { deleteObject, getStorage, ref } from 'firebase/storage';
+import DBAddNewUsers from './DBAddNewUsers';
 
 const ConfirmDialog = ({ dialogRef, currentProduct, productsList, resetCurrProd }) => {
   const dispatch = useDispatch();
@@ -48,6 +49,7 @@ const DBItems = () => {
   const products = useSelector(state => state.products);
   const dialogRef = useRef();
   const [currProdData, setCurrProdData] = useState(null);
+  const [isEdit, setIsEdit] = useState(false);
   const dispatch = useDispatch();
   useEffect(() => {
     const getProductsList = async () => {
@@ -61,12 +63,17 @@ const DBItems = () => {
     getProductsList();
   }, [dispatch, products]);
 
+  const editProduct = () => {
+    setCurrProdData(products[event.target.id]);
+    setIsEdit(true);
+  }
+
   const showConfirmDialog = () => {
     setCurrProdData(products[event.target.id]);
     dialogRef.current.showModal();
   }
 
-  return !products ? (<div>Loading...</div>) : (
+  return isEdit ? <DBAddNewUsers productInfo = {currProdData} editState = {setIsEdit} /> : !products ? (<div>Loading...</div>) : (
     <>
       <aside className='flex flex-col gap-4 mt-4'>
         <section className='grid grid-flow-col gap-4 items-center grid-cols-productsListing font-semibold text-xl'>
@@ -84,7 +91,7 @@ const DBItems = () => {
               <span title={products.productCategory.toString()} className='text-ellipsis overflow-hidden'>{products.productCategory.toString()}</span>
               <div className='gap-2 hidden group-hover:flex'>
                 <motion.span {...animateHover}>
-                  <PencilIcon id={index} title='Edit' onClick={showConfirmDialog} className='w-5 h-5 cursor-pointer' />
+                  <PencilIcon id={index} title='Edit' onClick={editProduct} className='w-5 h-5 cursor-pointer' />
                 </motion.span>
                 <motion.span {...animateHover}>
                   <TrashIcon id={index} title='Delete' onClick={showConfirmDialog} className='w-5 h-5 cursor-pointer' />
