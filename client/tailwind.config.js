@@ -22,7 +22,8 @@ export default {
         'login':'linear-gradient(326deg, #861657 0%, #ffa69e 74%)'
       },
       gridTemplateColumns:{
-        'productsListing' : '110px repeat(3, minmax(0, 1fr)) 100px'
+        'productsListing' : '110px repeat(3, minmax(0, 1fr)) 100px',
+        'usersListing': '110px repeat(2, minmax(0, 1fr)) 160px'
       }
     },
   },

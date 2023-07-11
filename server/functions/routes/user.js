@@ -41,11 +41,12 @@ const getAllUsers = async (nextPageToken) => {
       });
 };
 
-getAllUsers();
 
 router.get("/all", async (req, res) => {
   try {
-    await getAllUsers();
+    if (usersList.length == 0) {
+      await getAllUsers();
+    }
     return res.status(200).json({data: usersList, count: usersList.length});
   } catch (err) {
     return res.status(404).send({msg: err});
